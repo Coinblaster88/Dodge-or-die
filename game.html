@@ -123,9 +123,9 @@
             y: canvas.height - 150,
             width: 50,
             height: 70,
-            speed: 3,
+            speed: 4,
             dx: 0,
-            riseSpeed: 0.5
+            riseSpeed: 2.5
         };
 
         // Obstacles array
@@ -229,11 +229,11 @@
         function createObstacle() {
             const size = 40 + Math.random() * 40;
             const obstacle = {
-                x: canvas.width,
-                y: Math.random() * (canvas.height - 200) + 50,
+                x: Math.random() * (canvas.width - 100) + 50,
+                y: -size,
                 width: size,
                 height: size,
-                speed: 3 + difficulty * 0.5,
+                speed: 2.5 + difficulty * 0.3,
                 type: Math.random() > 0.5 ? 'spike' : 'bird'
             };
             obstacles.push(obstacle);
@@ -277,11 +277,11 @@
                     ctx.fill();
                 }
 
-                // Move obstacle
-                obs.x -= obs.speed;
+                // Move obstacle down (balloon rising effect)
+                obs.y += obs.speed;
 
                 // Remove off-screen obstacles
-                if (obs.x < -obs.width) {
+                if (obs.y > canvas.height + obs.height) {
                     obstacles.splice(index, 1);
                     score += 10;
                     document.getElementById('score').textContent = `Score: ${score}`;
@@ -320,9 +320,13 @@
             if (balloon.x < balloon.width / 2) balloon.x = balloon.width / 2;
             if (balloon.x > canvas.width - balloon.width / 2) balloon.x = canvas.width - balloon.width / 2;
 
-            // Rising effect (slight upward drift)
+            // Balloon rises continuously
             balloon.y -= balloon.riseSpeed;
-            if (balloon.y < balloon.height / 2) balloon.y = balloon.height / 2;
+            
+            // Keep balloon in view, centered vertically
+            if (balloon.y < canvas.height / 2) {
+                balloon.y = canvas.height / 2;
+            }
         }
 
         // Game loop
@@ -342,7 +346,7 @@
 
             // Create obstacles
             obstacleTimer++;
-            if (obstacleTimer > 80 - difficulty * 5) {
+            if (obstacleTimer > 60 - difficulty * 3) {
                 createObstacle();
                 obstacleTimer = 0;
             }
