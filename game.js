@@ -9,6 +9,7 @@ let gameRunning = false;
 let gamePaused = false;
 let score = 0;
 let animationId;
+let gameSpeed = 1.0;
 
 // Balloon object
 const balloon = {
@@ -16,8 +17,10 @@ const balloon = {
     y: canvas.height - 150,
     width: 50,
     height: 70,
+    baseSpeed: 6,
     speed: 6,
     dx: 0,
+    baseRiseSpeed: 4,
     riseSpeed: 4
 };
 
@@ -179,7 +182,7 @@ function drawObstacles() {
 
         // Move obstacle down only if not paused
         if (!gamePaused) {
-            obs.y += obs.speed;
+            obs.y += obs.speed * gameSpeed;
 
             // Remove off-screen obstacles
             if (obs.y > canvas.height + obs.height) {
@@ -191,14 +194,22 @@ function drawObstacles() {
     });
 }
 
-// Collision detection
+// Collision detection with circular hitboxes
 function checkCollision() {
+    // Balloon hitbox is circular
+    const balloonRadius = balloon.width / 2.5; // Slightly smaller for more forgiving gameplay
+    
     for (let obs of obstacles) {
-        const distX = Math.abs(balloon.x - obs.x);
-        const distY = Math.abs(balloon.y - obs.y);
+        // Calculate distance between centers
+        const dx = balloon.x - obs.x;
+        const dy = balloon.y - obs.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (distX < (balloon.width / 2 + obs.width / 2) && 
-            distY < (balloon.height / 2 + obs.height / 2)) {
+        // Obstacle hitbox radius (smaller for more precise collision)
+        const obsRadius = obs.width / 2.8;
+        
+        // Circular collision detection
+        if (distance < balloonRadius + obsRadius) {
             return true;
         }
     }
@@ -208,6 +219,10 @@ function checkCollision() {
 // Update balloon position
 function updateBalloon() {
     if (gamePaused) return;
+
+    // Update speeds based on game speed multiplier
+    balloon.speed = balloon.baseSpeed * gameSpeed;
+    balloon.riseSpeed = balloon.baseRiseSpeed * gameSpeed;
 
     // Horizontal movement
     if (keys['ArrowLeft']) {
@@ -251,15 +266,19 @@ function gameLoop() {
     // Create obstacles only if not paused
     if (!gamePaused) {
         obstacleTimer++;
-        if (obstacleTimer > 40 - difficulty * 2) {
+        if (obstacleTimer > (40 - difficulty * 2) / gameSpeed) {
             createObstacle();
             obstacleTimer = 0;
         }
 
-        // Increase difficulty
-        if (score > 0 && score % 100 === 0) {
+        // Progressively increase game speed over time
+        if (score > 0 && score % 50 === 0) {
             difficulty += 0.1;
         }
+        
+        // Gradual speed increase every second of gameplay
+        gameSpeed += 0.0005;
+        if (gameSpeed > 2.5) gameSpeed = 2.5; // Cap max speed
 
         // Check collision
         if (checkCollision()) {
@@ -299,9 +318,12 @@ function startGame() {
     gamePaused = false;
     score = 0;
     difficulty = 1;
+    gameSpeed = 1.0;
     obstacles = [];
     balloon.x = canvas.width / 2;
     balloon.y = canvas.height - 150;
+    balloon.speed = balloon.baseSpeed;
+    balloon.riseSpeed = balloon.baseRiseSpeed;
     
     document.getElementById('score').textContent = 'Score: 0';
     gameLoop();
@@ -340,8 +362,11 @@ function quitToMenu() {
     obstacles = [];
     score = 0;
     difficulty = 1;
+    gameSpeed = 1.0;
     balloon.x = canvas.width / 2;
     balloon.y = canvas.height - 150;
+    balloon.speed = balloon.baseSpeed;
+    balloon.riseSpeed = balloon.baseRiseSpeed;
 }
 
 // Handle window resize
